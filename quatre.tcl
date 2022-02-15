@@ -1,3 +1,7 @@
+proc debug {x} {
+  #puts $x
+}
+
 proc run {code} {
   # default-init the stack
   lappend stack
@@ -5,10 +9,22 @@ proc run {code} {
   # set up commands
   set commands(print) {{text} {
     puts $text
+    list
   }}
   set commands(+) {{a b} {
-    upvar 1 stack
     expr $a+$b
+  }}
+  set commands(join2) {{a b} {
+    list [list $a $b]
+  }}
+  set commands(split) {{xs} {
+    return $xs
+  }}
+  set commands(length) {{xs} {
+    llength $xs
+  }}
+  set commands(dup) {{x} {
+    list $x $x
   }}
 
   # run code
@@ -19,15 +35,16 @@ proc run {code} {
       set arglen [llength [lindex $cmd 0]]
       # 0-indexed lists
       incr arglen -1
+      debug "Pre stack: $stack"
       # reverse list: top of stack is 1st arg
       set lambdarg [lreverse [lrange $stack end-$arglen end]]
       set stack [lrange $stack 0 end-[expr $arglen+1]]
-      lappend stack [apply $cmd {*}$lambdarg]
+      set stack [concat $stack [apply $cmd {*}$lambdarg]]
+      debug "Post stack: $stack"
     } else {
-      # XXX lappend *might* fuck up braces in that list.. :(
-      #     (after testing: should not happen if a braced value
-      #      wasn't in the first `set`)
+      debug "Pre append: $stack"
       lappend stack $el
+      debug "Post append: $stack"
     }
   }
 }
